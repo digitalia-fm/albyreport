@@ -12,6 +12,9 @@ struct AlbyReport: ParsableCommand {
     @Option(name: .shortAndLong, help: "The date of the oldest transaction to retrieve. Leave empty for last 7 days.", transform: parseDate(shortFormatter))
     var date: Date?
     
+    @Flag(name: .shortAndLong, help: "Set this flag if you want verbose reporting.")
+    var verbose: Bool = false
+    
     mutating func run() throws {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
@@ -36,6 +39,8 @@ struct AlbyReport: ParsableCommand {
             print("A token is mandatory to access your transactions from Alby servers.")
             return
         }
+        
+        let verbose = verbose
         
         self.getAllTransactions(with: token, dateLimit: oldestDate) {  result in
             switch result {
@@ -71,34 +76,38 @@ struct AlbyReport: ParsableCommand {
                             user.episodes.append(newEpisode)
                         }
                         
-                        let time = customRecord.ts.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
-                        print("Transaction \(date) - \(customRecord.action.rawValue) - \(amount.formattedSatoshiDescription) - from: \(customRecord.senderName ?? "?") - for episode: \(customRecord.episode ?? "?") - timestamp: \(time)")
-                    }
-                    
-                    print("GENERAL REPORT\n")
-                    for user in users {
-                        print("\(user.name ?? "Anon")")
-                        for episode in user.episodes {
-                            print("\t\(episode.aggregatedStreamPayments.formattedSatoshiDescription) streamed - \(episode.title ?? episode.guid)")
-                            if episode.boostPayments.count > 0 {
-                                for payment in episode.boostPayments {
-                                    let time = payment.timestamp.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
-                                    print("\tBoost: \(payment.amount) - \(payment.message ?? "No message") - timestamp: \(time)")
-                                }
-                            }
+                        if verbose == true {
+                            let time = customRecord.ts.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
+                            print("Transaction \(date) - \(customRecord.action.rawValue) - \(amount.formattedSatoshiDescription) - from: \(customRecord.senderName ?? "?") - for episode: \(customRecord.episode ?? "?") - timestamp: \(time)")
                         }
                     }
                     
-                    print("\nFOR REPORT\n")
+                    if verbose == true {
+                        print("GENERAL REPORT\n")
+                        for user in users {
+                            print("\(user.name ?? "Anon")")
+                            for episode in user.episodes {
+                                print("\t\(episode.aggregatedStreamPayments.formattedSatoshiDescription) streamed - \(episode.title ?? episode.guid)")
+                                if episode.boostPayments.count > 0 {
+                                    for payment in episode.boostPayments {
+                                        let time = payment.timestamp.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
+                                        print("\tBoost: \(payment.amount) - \(payment.message ?? "No message") - timestamp: \(time)")
+                                    }
+                                }
+                            }
+                            print("\n")
+                        }
+                    }
+                    
                     print("\nSTREAMERS\n")
                     for user in users {
                         print("\(user.name ?? "Anon")\t\(user.aggregatedStreamPayments)")
                     }
                     
-                    print("\nBOOST\n")
+                    print("\nBOOST")
                     for user in users {
                         if user.aggregatedBoostPayments > 0 {
-                            print("\(user.name ?? "Anon")")
+                            print("\n\(user.name ?? "Anon")")
                             for episode in user.episodes {
                                 if episode.boostPayments.count > 0 {
                                     print("\t\(episode.title ?? episode.guid)")
@@ -135,11 +144,12 @@ struct AlbyReport: ParsableCommand {
                 alby.requestInvoices(with: token, page: currentPage, resultsPerPage: 25, createdAfter: dateLimit) { result in
                     switch result {
                         case .success(let paginatedResponse):
-                            for transaction in paginatedResponse.response {
-                                print("id: \(transaction.identifier) - created at: \(transaction.createdAt) - by: \(transaction.boostagram?.senderName ?? "?")")
+                            if verbose == true {
+                                for transaction in paginatedResponse.response {
+                                    print("id: \(transaction.identifier) - created at: \(transaction.createdAt) - by: \(transaction.boostagram?.senderName ?? "?")")
+                                }
+                                print("-------------------")
                             }
-                            print("-------------------")
-                            
                             transactions.append(contentsOf: paginatedResponse.response)
                             if paginatedResponse.response.count < 25 {
                                 bail = true
