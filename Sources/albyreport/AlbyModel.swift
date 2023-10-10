@@ -60,7 +60,11 @@ public struct BoostagramResponse: Codable {
     public let boostLink: String?
     public let episode: String?
     public let episodeGuid: String?
-    public let feedID, itemID: Int?
+    public let feedID: Int?
+    public var _itemID: RelaxedString? // note this is can be Int or String
+    public var itemID: String? {
+        return _itemID?.value
+    }
     public let message: String?
     public let name, podcast, senderID, senderName: String?
     public let time: String?
@@ -72,7 +76,8 @@ public struct BoostagramResponse: Codable {
         case action
         case appName = "app_name"
         case boostLink = "boost_link"
-        case episode, feedID, itemID, message, name, podcast
+        case episode, feedID, message, name, podcast
+        case _itemID = "itemID"
         case episodeGuid = "episode_guid"
         case senderID = "sender_id"
         case senderName = "sender_name"
