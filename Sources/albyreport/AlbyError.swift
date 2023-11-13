@@ -8,9 +8,9 @@
 import Foundation
 
 public struct ErrorResponse: Codable {
-    public let code: Int       // 0
-    public let error: Bool     // true
-    public let message: String // "The requested resource was not found."
+    public let code: Int?       // 0
+    public let error: String     // true
+    public let message: String? // "The requested resource was not found."
 }
 
 
@@ -22,7 +22,7 @@ public enum AlbyError: Error {
     var httpStatusCode: HTTPStatusCode? {
         switch self {
             case .alby(let response):
-                return HTTPStatusCode(rawValue: response.code)
+                return HTTPStatusCode(rawValue: response.code ?? 0)
             default:
                 return nil
         }

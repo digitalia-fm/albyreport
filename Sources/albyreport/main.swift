@@ -15,6 +15,9 @@ struct AlbyReport: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Set this flag if you want verbose reporting.")
     var verbose: Bool = false
     
+    @Flag(name: .shortAndLong, help: "Set this flag if you want to re-enter the Alby token.")
+    var forgetToken: Bool = false
+    
     mutating func run() throws {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
@@ -26,6 +29,10 @@ struct AlbyReport: ParsableCommand {
         
         let defaults = UserDefaults.standard
         var token = defaults.value(forKey: "albytoken") as? String
+        
+        if forgetToken == true {
+            token = nil
+        }
         
         if token == nil {
             print("Please enter your Alby token")
