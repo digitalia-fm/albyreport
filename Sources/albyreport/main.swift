@@ -106,26 +106,30 @@ struct AlbyReport: ParsableCommand {
                         }
                     }
                     
-                    print("\nSTREAMERS\n")
-                    for user in users {
-                        print("\(user.name ?? "Anon")\t\(user.aggregatedStreamPayments)")
+                    let formatter = NumberFormatter()
+                    formatter.maximumFractionDigits = 2
+                    formatter.minimumFractionDigits = 0
+                    formatter.decimalSeparator = ","
+                    
+                    print("\nREPORT\n")
+                    
+                    for user in users.filter({$0.aggregatedStreamPayments > 0}) {
+                        let stringAmount = formatter.string(from: NSNumber(value: user.aggregatedStreamPayments.toSatoshi))
+                        print("\(user.name ?? "anonymous")\t\(stringAmount ?? "unknown")\tsats\tv4v streamer\t")
                     }
                     
-                    print("\nBOOST")
-                    for user in users {
-                        if user.aggregatedBoostPayments > 0 {
-                            print("\n\(user.name ?? "Anon")")
-                            for episode in user.episodes {
-                                if episode.boostPayments.count > 0 {
-                                    print("\t\(episode.title ?? episode.guid)")
-                                    for payment in episode.boostPayments {
-                                        let time = payment.timestamp.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
-                                        print("\t\t\(payment.amount) - \(payment.message ?? "No message") - timestamp: \(time)")
-                                    }
-                                }
+                    print("")
+                    
+                    for user in users.filter({$0.aggregatedBoostPayments > 0}) {
+                        for episode in user.episodes {
+                            for payment in episode.boostPayments {
+                                let stringAmount = formatter.string(from: NSNumber(value: payment.amount.toSatoshi))
+                                let timestamp = payment.timestamp.map({ TimeInterval($0)})?.toHHMMSS() ?? "unknown"
+                                let message = "\(timestamp) - \(episode.title ?? episode.guid) - \(payment.message ?? "")"
+                                print("\(user.name ?? "anonymous")\t\(stringAmount ?? "unknown")\tsats\tBOOST!\t\t\(message)")
                             }
+                            
                         }
-                        
                     }
                     
                     Darwin.exit(EXIT_SUCCESS)
